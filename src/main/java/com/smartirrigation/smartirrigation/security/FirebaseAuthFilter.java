@@ -12,7 +12,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,13 +19,6 @@ import java.io.IOException;
 import java.util.List;
 
 public class FirebaseAuthFilter extends OncePerRequestFilter {
-
-    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
-    private static final List<String> DEVICE_PATHS = List.of(
-            "/api/webhooks/**",
-            "/api/devices/*/config",
-            "/api/devices/*/commands/poll"
-    );
 
     private final FirebaseAuth firebaseAuth;
     private final UsuarioRepository usuarioRepository;
@@ -41,7 +33,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String cleanedUri = StringUtils.cleanPath(request.getRequestURI());
-        if (isDevicePath(cleanedUri)) {
+        if (DevicePaths.matches(cleanedUri)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -71,9 +63,5 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token de autenticacao invalido");
         }
-    }
-
-    private boolean isDevicePath(String uri) {
-        return DEVICE_PATHS.stream().anyMatch(pattern -> PATH_MATCHER.match(pattern, uri));
     }
 }

@@ -5,21 +5,12 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 public class DeviceKeyFilter extends OncePerRequestFilter {
-
-    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
-    private static final List<String> DEVICE_PATHS = List.of(
-            "/api/webhooks/**",
-            "/api/devices/*/config",
-            "/api/devices/*/commands/poll"
-    );
 
     private final FirebaseEnv firebaseEnv;
 
@@ -32,7 +23,7 @@ public class DeviceKeyFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String cleanedUri = StringUtils.cleanPath(request.getRequestURI());
-        if (!isDevicePath(cleanedUri)) {
+        if (!DevicePaths.matches(cleanedUri)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -44,9 +35,5 @@ public class DeviceKeyFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private boolean isDevicePath(String uri) {
-        return DEVICE_PATHS.stream().anyMatch(pattern -> PATH_MATCHER.match(pattern, uri));
     }
 }
