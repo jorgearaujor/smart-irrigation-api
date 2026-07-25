@@ -22,9 +22,13 @@ public class CommandDispatchService {
 
     public void enqueue(String deviceId, Command command) {
         ConcurrentLinkedQueue<CompletableFuture<Optional<Command>>> queue = waiters.get(deviceId);
-        CompletableFuture<Optional<Command>> waiting = (queue == null) ? null : queue.poll();
-        if (waiting != null && waiting.complete(Optional.of(command))) {
-            return;
+        if (queue != null) {
+            CompletableFuture<Optional<Command>> waiting;
+            while ((waiting = queue.poll()) != null) {
+                if (waiting.complete(Optional.of(command))) {
+                    return;
+                }
+            }
         }
         // Nao ha long-poll pendente agora; o proximo poll() buscara este comando via a fila abaixo.
         pending.computeIfAbsent(deviceId, id -> new ConcurrentLinkedQueue<>()).add(command);
@@ -40,9 +44,15 @@ public class CommandDispatchService {
         }
 
         CompletableFuture<Optional<Command>> future = new CompletableFuture<>();
-        waiters.computeIfAbsent(deviceId, id -> new ConcurrentLinkedQueue<>()).add(future);
+        ConcurrentLinkedQueue<CompletableFuture<Optional<Command>>> queue =
+                waiters.computeIfAbsent(deviceId, id -> new ConcurrentLinkedQueue<>());
+        queue.add(future);
 
-        timeoutExecutor.schedule(() -> future.complete(Optional.empty()), timeoutMillis, TimeUnit.MILLISECONDS);
+        timeoutExecutor.schedule(() -> {
+            if (future.complete(Optional.empty())) {
+                queue.remove(future);
+            }
+        }, timeoutMillis, TimeUnit.MILLISECONDS);
         return future;
     }
 }

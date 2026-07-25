@@ -45,4 +45,27 @@ class CommandDispatchServiceTest {
 
         assertTrue(result.isEmpty());
     }
+
+    @Test
+    void enqueue_skipsStaleTimedOutWaiter_andResolvesLiveWaiterBehindIt() throws Exception {
+        CommandDispatchService service = new CommandDispatchService();
+
+        // First waiter: let it time out and complete empty, but leave it sitting in the
+        // waiters queue (this reproduces the bug: nothing removes a timed-out future from
+        // the queue on its own, so it lingers ahead of any later waiter for the same device).
+        CompletableFuture<Optional<CommandDispatchService.Command>> staleFuture =
+                service.poll("esp32-01", 100);
+        Optional<CommandDispatchService.Command> staleResult = staleFuture.get(2, TimeUnit.SECONDS);
+        assertTrue(staleResult.isEmpty());
+
+        // Second waiter: a genuinely live long-poll registered right after the stale one.
+        CompletableFuture<Optional<CommandDispatchService.Command>> liveFuture =
+                service.poll("esp32-01", 5000);
+
+        service.enqueue("esp32-01", new CommandDispatchService.Command("LIGAR_BOMBA", Map.of("zona", 1)));
+
+        Optional<CommandDispatchService.Command> liveResult = liveFuture.get(2, TimeUnit.SECONDS);
+        assertTrue(liveResult.isPresent());
+        assertEquals("LIGAR_BOMBA", liveResult.get().type());
+    }
 }
