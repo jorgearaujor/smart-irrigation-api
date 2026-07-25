@@ -21,7 +21,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/webhooks/**", "/api/devices/*/config", "/api/devices/*/commands/poll").permitAll()
+                        .requestMatchers(DevicePaths.PATTERNS.toArray(new String[0])).permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new DeviceKeyFilter(firebaseEnv), UsernamePasswordAuthenticationFilter.class)
