@@ -13,6 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -39,7 +40,8 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (isDevicePath(request.getRequestURI())) {
+        String cleanedUri = StringUtils.cleanPath(request.getRequestURI());
+        if (isDevicePath(cleanedUri)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -61,7 +63,11 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             var authentication = new UsernamePasswordAuthenticationToken(uid, null, List.of(authority));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            filterChain.doFilter(request, response);
+            try {
+                filterChain.doFilter(request, response);
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token de autenticacao invalido");
         }

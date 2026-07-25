@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -43,9 +44,18 @@ class FirebaseAuthFilterTest {
         request.addHeader("Authorization", "Bearer valid-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
+        // The filter now clears the SecurityContext in a finally block once the chain
+        // returns, so the authentication set for this request must be captured *during*
+        // the chain.doFilter callback rather than read back afterward.
+        AtomicReference<Authentication> authDuringChain = new AtomicReference<>();
+        doAnswer(invocation -> {
+            authDuringChain.set(SecurityContextHolder.getContext().getAuthentication());
+            return null;
+        }).when(chain).doFilter(any(), any());
+
         new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = authDuringChain.get();
         assertNotNull(auth);
         assertTrue(auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")));
         verify(chain).doFilter(request, response);
@@ -79,5 +89,49 @@ class FirebaseAuthFilterTest {
 
         verify(chain).doFilter(request, response);
         verifyNoInteractions(firebaseAuth);
+    }
+
+    @Test
+    void doFilter_doesNotTreatPathTraversalUriAsDevicePath() throws Exception {
+        FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
+        UsuarioRepository usuarioRepository = mock(UsuarioRepository.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        // Raw URI contains a literal ".." segment that, without normalization, tokenizes
+        // under AntPathMatcher such that "/api/webhooks/**" would opaquely swallow it -
+        // even though the normalized path is not actually a device-only path.
+        MockHttpServletRequest request =
+                new MockHttpServletRequest("POST", "/api/webhooks/../devices/esp32-01/config-irrigacao");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+        verify(chain, never()).doFilter(any(), any());
+        verifyNoInteractions(firebaseAuth);
+    }
+
+    @Test
+    void doFilter_clearsSecurityContext_afterSuccessfulAuthentication() throws Exception {
+        FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
+        UsuarioRepository usuarioRepository = mock(UsuarioRepository.class);
+        FirebaseToken token = mock(FirebaseToken.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(token);
+        when(token.getUid()).thenReturn("uid-456");
+        when(usuarioRepository.findById("uid-456")).thenReturn(Optional.empty());
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices/esp32-01/status");
+        request.addHeader("Authorization", "Bearer valid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+
+        // Asserted here, before the @AfterEach teardown runs, to prove the filter itself
+        // clears the context rather than relying on test teardown to hide the fact that
+        // it never did.
+        assertNull(SecurityContextHolder.getContext().getAuthentication(),
+                "FirebaseAuthFilter must clear the SecurityContext itself once the chain returns");
     }
 }
