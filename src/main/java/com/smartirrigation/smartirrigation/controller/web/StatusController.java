@@ -1,6 +1,5 @@
 package com.smartirrigation.smartirrigation.controller.web;
 
-import com.smartirrigation.smartirrigation.dto.DeviceConfigResponseDTO;
 import com.smartirrigation.smartirrigation.dto.DeviceStatusResponseDTO;
 import com.smartirrigation.smartirrigation.service.DeviceService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,13 +22,7 @@ public class StatusController {
 
     @GetMapping("/status")
     public ResponseEntity<DeviceStatusResponseDTO> getStatus(@PathVariable String deviceId) {
-        DeviceConfigResponseDTO config = deviceService.getConfig(deviceId);
-
-        DeviceStatusResponseDTO status = new DeviceStatusResponseDTO();
-        status.setModo(config.getModo());
-        status.setAutorizado(config.getAutorizado());
-        status.setQuantidadeAgua(config.getQuantidadeAgua());
-        status.setLatitude(config.getLatitude());
+        DeviceStatusResponseDTO status = deviceService.getStatus(deviceId);
         return ResponseEntity.ok(status);
     }
 }

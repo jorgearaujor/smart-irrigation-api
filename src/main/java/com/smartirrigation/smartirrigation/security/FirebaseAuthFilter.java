@@ -12,13 +12,23 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
+import org.springframework.web.cors.CorsUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
 public class FirebaseAuthFilter extends OncePerRequestFilter {
+
+    private static final List<String> PUBLIC_PATHS = List.of(
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
+    );
+
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
     private final FirebaseAuth firebaseAuth;
     private final UsuarioRepository usuarioRepository;
@@ -32,8 +42,18 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        if (CorsUtils.isPreFlightRequest(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String cleanedUri = StringUtils.cleanPath(request.getRequestURI());
         if (DevicePaths.matches(cleanedUri)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (PUBLIC_PATHS.stream().anyMatch(pattern -> PATH_MATCHER.match(pattern, cleanedUri))) {
             filterChain.doFilter(request, response);
             return;
         }

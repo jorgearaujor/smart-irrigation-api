@@ -134,4 +134,41 @@ class FirebaseAuthFilterTest {
         assertNull(SecurityContextHolder.getContext().getAuthentication(),
                 "FirebaseAuthFilter must clear the SecurityContext itself once the chain returns");
     }
+
+    @Test
+    void doFilter_passesThrough_forActualCorsPreflightRequest() throws Exception {
+        FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
+        UsuarioRepository usuarioRepository = mock(UsuarioRepository.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("OPTIONS", "/api/devices/esp32-01/status");
+        request.addHeader("Origin", "http://localhost:4200");
+        request.addHeader("Access-Control-Request-Method", "GET");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+
+        verify(chain).doFilter(request, response);
+        verifyNoInteractions(firebaseAuth);
+    }
+
+    @Test
+    void doFilter_passesThrough_forSwaggerAndApiDocsPaths() throws Exception {
+        FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
+        UsuarioRepository usuarioRepository = mock(UsuarioRepository.class);
+
+        FilterChain apiDocsChain = mock(FilterChain.class);
+        MockHttpServletRequest apiDocsRequest = new MockHttpServletRequest("GET", "/v3/api-docs");
+        MockHttpServletResponse apiDocsResponse = new MockHttpServletResponse();
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(apiDocsRequest, apiDocsResponse, apiDocsChain);
+        verify(apiDocsChain).doFilter(apiDocsRequest, apiDocsResponse);
+
+        FilterChain swaggerChain = mock(FilterChain.class);
+        MockHttpServletRequest swaggerRequest = new MockHttpServletRequest("GET", "/swagger-ui/index.html");
+        MockHttpServletResponse swaggerResponse = new MockHttpServletResponse();
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(swaggerRequest, swaggerResponse, swaggerChain);
+        verify(swaggerChain).doFilter(swaggerRequest, swaggerResponse);
+
+        verifyNoInteractions(firebaseAuth);
+    }
 }

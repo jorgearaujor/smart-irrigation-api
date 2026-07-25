@@ -78,4 +78,20 @@ public class DeviceService {
 
         return response;
     }
+
+    public DeviceStatusResponseDTO getStatus(String deviceId) {
+        Device device = deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new NotFoundException("Device nao encontrado: " + deviceId));
+
+        DeviceStatusResponseDTO response = new DeviceStatusResponseDTO();
+        response.setModo(device.getModo());
+        response.setAutorizado(device.getAutorizado());
+        response.setQuantidadeAgua(device.getQuantidadeAgua());
+        response.setTempMin(device.getTempMin());
+        response.setTempMax(device.getTempMax());
+        response.setEmExecucao(device.getEmExecucao());
+        response.setLatitude(device.getLatitude());
+
+        return response;
+    }
 }

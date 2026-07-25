@@ -2,6 +2,7 @@ package com.smartirrigation.smartirrigation.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,6 +34,11 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse(ex.getMessage());
         return build(HttpStatus.BAD_REQUEST, mensagem);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAccessDenied(AccessDeniedException ex) {
+        return build(HttpStatus.FORBIDDEN, "Acesso negado: permissao insuficiente para este recurso.");
     }
 
     @ExceptionHandler(Exception.class)

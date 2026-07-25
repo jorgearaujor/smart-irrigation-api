@@ -1,7 +1,9 @@
 package com.smartirrigation.smartirrigation.service;
 
+import com.smartirrigation.smartirrigation.dto.DeviceStatusResponseDTO;
 import com.smartirrigation.smartirrigation.dto.StatusWebhookRequestDTO;
 import com.smartirrigation.smartirrigation.dto.TelemetryWebhookRequestDTO;
+import com.smartirrigation.smartirrigation.exception.NotFoundException;
 import com.smartirrigation.smartirrigation.model.Device;
 import com.smartirrigation.smartirrigation.model.Telemetry;
 import com.smartirrigation.smartirrigation.repository.DeviceRepository;
@@ -13,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class DeviceServiceTest {
@@ -59,5 +62,36 @@ class DeviceServiceTest {
         verify(deviceRepository).save(eq("esp32-01"), captor.capture());
         assertEquals("automatico", captor.getValue().getModo());
         assertEquals(true, captor.getValue().getAutorizado());
+    }
+
+    @Test
+    void getStatus_mapsAllSevenFieldsFromDevice() {
+        Device device = new Device();
+        device.setModo("automatico");
+        device.setAutorizado(true);
+        device.setQuantidadeAgua(12.5);
+        device.setTempMin(18.0);
+        device.setTempMax(32.0);
+        device.setEmExecucao(true);
+        device.setLatitude(-23.55);
+
+        when(deviceRepository.findById("esp32-01")).thenReturn(Optional.of(device));
+
+        DeviceStatusResponseDTO status = service.getStatus("esp32-01");
+
+        assertEquals("automatico", status.getModo());
+        assertEquals(true, status.getAutorizado());
+        assertEquals(12.5, status.getQuantidadeAgua());
+        assertEquals(18.0, status.getTempMin());
+        assertEquals(32.0, status.getTempMax());
+        assertEquals(true, status.getEmExecucao());
+        assertEquals(-23.55, status.getLatitude());
+    }
+
+    @Test
+    void getStatus_throwsNotFound_whenDeviceMissing() {
+        when(deviceRepository.findById("missing-device")).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> service.getStatus("missing-device"));
     }
 }

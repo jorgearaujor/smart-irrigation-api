@@ -3,6 +3,7 @@ package com.smartirrigation.smartirrigation.exception;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -36,5 +37,15 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertEquals(401, response.getBody().getStatus());
+    }
+
+    @Test
+    void handleAccessDenied_returns403() {
+        ResponseEntity<ErrorResponseDTO> response =
+                handler.handleAccessDenied(new AccessDeniedException("Access is denied"));
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertEquals(403, response.getBody().getStatus());
+        assertEquals("Acesso negado: permissao insuficiente para este recurso.", response.getBody().getMessage());
     }
 }
