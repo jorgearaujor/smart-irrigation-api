@@ -25,6 +25,20 @@ class FirebaseEnvTest {
         assertEquals("./firebase.json", result.credentialsPath());
         assertEquals("chave-secreta", result.deviceApiKey());
         assertEquals("http://localhost:4200", result.corsAllowedOrigins());
+        assertEquals(false, result.dashboardAuthEnabled());
+    }
+
+    @Test
+    void fromEnvironment_parsesDashboardAuthEnabledFlag() {
+        Environment env = mock(Environment.class);
+        when(env.getProperty("FIRESTORE_PROJECT_ID")).thenReturn("smart-irrigation-ifmaker");
+        when(env.getProperty("GOOGLE_APPLICATION_CREDENTIALS")).thenReturn("./firebase.json");
+        when(env.getProperty("DEVICE_API_KEY")).thenReturn("chave-secreta");
+        when(env.getProperty("DASHBOARD_AUTH_ENABLED", "false")).thenReturn("true");
+
+        FirebaseEnv result = FirebaseEnv.fromEnvironment(env);
+
+        assertEquals(true, result.dashboardAuthEnabled());
     }
 
     @Test

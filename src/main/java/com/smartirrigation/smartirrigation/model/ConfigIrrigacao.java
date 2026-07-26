@@ -5,6 +5,8 @@ import com.google.cloud.firestore.annotation.PropertyName;
 public class ConfigIrrigacao {
 
     private Double kc = 1.40;
+    private String cultura = "";
+    private Integer faseCrescimento = 1;
     private Double espacamentoPlantasM = 0.3;
     private Double espacamentoLinhasM = 0.3;
     private Double vazaoGotejadorLph = 2.0;
@@ -18,6 +20,22 @@ public class ConfigIrrigacao {
 
     public void setKc(Double kc) {
         this.kc = kc;
+    }
+
+    public String getCultura() {
+        return cultura;
+    }
+
+    public void setCultura(String cultura) {
+        this.cultura = cultura;
+    }
+
+    public Integer getFaseCrescimento() {
+        return faseCrescimento;
+    }
+
+    public void setFaseCrescimento(Integer faseCrescimento) {
+        this.faseCrescimento = faseCrescimento;
     }
 
     @PropertyName("espacamento_plantas_m")

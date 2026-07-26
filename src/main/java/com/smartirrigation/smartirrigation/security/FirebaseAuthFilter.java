@@ -32,10 +32,13 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
     private final FirebaseAuth firebaseAuth;
     private final UsuarioRepository usuarioRepository;
+    private final boolean dashboardAuthEnabled;
 
-    public FirebaseAuthFilter(FirebaseAuth firebaseAuth, UsuarioRepository usuarioRepository) {
+    public FirebaseAuthFilter(FirebaseAuth firebaseAuth, UsuarioRepository usuarioRepository,
+                               boolean dashboardAuthEnabled) {
         this.firebaseAuth = firebaseAuth;
         this.usuarioRepository = usuarioRepository;
+        this.dashboardAuthEnabled = dashboardAuthEnabled;
     }
 
     @Override
@@ -58,6 +61,12 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Web dashboard login is implemented but switched off for now (see FirebaseEnv).
+        if (!dashboardAuthEnabled) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token de autenticacao ausente");
@@ -67,10 +76,14 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         try {
             FirebaseToken token = firebaseAuth.verifyIdToken(header.substring("Bearer ".length()));
             String uid = token.getUid();
-            String tipo = usuarioRepository.findById(uid).map(Usuario::getTipo).orElse("");
+            Usuario usuario = usuarioRepository.findById(uid).orElse(null);
+            if (usuario == null) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Usuario nao autorizado");
+                return;
+            }
 
             GrantedAuthority authority = new SimpleGrantedAuthority(
-                    "Administrador".equals(tipo) ? "ROLE_ADMIN" : "ROLE_USER");
+                    "Administrador".equals(usuario.getTipo()) ? "ROLE_ADMIN" : "ROLE_USER");
 
             var authentication = new UsernamePasswordAuthenticationToken(uid, null, List.of(authority));
             SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -5,6 +5,7 @@ import com.smartirrigation.smartirrigation.model.ConfigIrrigacao;
 import com.smartirrigation.smartirrigation.model.Device;
 import com.smartirrigation.smartirrigation.repository.DeviceRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +33,19 @@ class ConfigIrrigacaoServiceTest {
     }
 
     @Test
+    void getConfig_mapsCulturaAndFaseCrescimento() {
+        Device device = new Device();
+        device.getConfigIrrigacao().setCultura("Tomate");
+        device.getConfigIrrigacao().setFaseCrescimento(3);
+        when(deviceRepository.findById("esp32-01")).thenReturn(Optional.of(device));
+
+        ConfigIrrigacaoDTO result = service.getConfig("esp32-01");
+
+        assertEquals("Tomate", result.getCultura());
+        assertEquals(3, result.getFaseCrescimento());
+    }
+
+    @Test
     void updateConfig_savesDeviceAndEnqueuesCommand() {
         Device device = new Device();
         when(deviceRepository.findById("esp32-01")).thenReturn(Optional.of(device));
@@ -46,5 +60,26 @@ class ConfigIrrigacaoServiceTest {
         verify(commandDispatchService).enqueue(eq("esp32-01"), argThat(command ->
                 command.type().equals("CONFIG_IRRIGACAO")
                         && command.payload().get("limiar_umidade_minima").equals(40.0)));
+    }
+
+    @Test
+    void updateConfig_savesCulturaAndFaseCrescimento() {
+        Device device = new Device();
+        when(deviceRepository.findById("esp32-01")).thenReturn(Optional.of(device));
+
+        ConfigIrrigacaoDTO dto = new ConfigIrrigacaoDTO();
+        dto.setCultura("Milho");
+        dto.setFaseCrescimento(2);
+
+        service.updateConfig("esp32-01", dto);
+
+        ArgumentCaptor<Device> captor = ArgumentCaptor.forClass(Device.class);
+        verify(deviceRepository).save(eq("esp32-01"), captor.capture());
+        assertEquals("Milho", captor.getValue().getConfigIrrigacao().getCultura());
+        assertEquals(2, captor.getValue().getConfigIrrigacao().getFaseCrescimento());
+
+        verify(commandDispatchService).enqueue(eq("esp32-01"), argThat(command ->
+                command.payload().get("cultura").equals("Milho")
+                        && command.payload().get("fase_crescimento").equals(2)));
     }
 }

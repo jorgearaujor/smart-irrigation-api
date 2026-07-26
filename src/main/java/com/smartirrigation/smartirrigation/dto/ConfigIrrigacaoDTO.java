@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ConfigIrrigacaoDTO {
     private Double kc;
+    private String cultura;
+    private Integer faseCrescimento;
     @JsonProperty("espacamento_plantas_m")
     private Double espacamentoPlantasM;
     @JsonProperty("espacamento_linhas_m")
@@ -19,6 +21,10 @@ public class ConfigIrrigacaoDTO {
 
     public Double getKc() { return kc; }
     public void setKc(Double kc) { this.kc = kc; }
+    public String getCultura() { return cultura; }
+    public void setCultura(String cultura) { this.cultura = cultura; }
+    public Integer getFaseCrescimento() { return faseCrescimento; }
+    public void setFaseCrescimento(Integer faseCrescimento) { this.faseCrescimento = faseCrescimento; }
     public Double getEspacamentoPlantasM() { return espacamentoPlantasM; }
     public void setEspacamentoPlantasM(Double espacamentoPlantasM) { this.espacamentoPlantasM = espacamentoPlantasM; }
     public Double getEspacamentoLinhasM() { return espacamentoLinhasM; }

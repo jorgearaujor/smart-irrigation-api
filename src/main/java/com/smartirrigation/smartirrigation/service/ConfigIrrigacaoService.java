@@ -27,6 +27,8 @@ public class ConfigIrrigacaoService {
 
         ConfigIrrigacaoDTO dto = new ConfigIrrigacaoDTO();
         dto.setKc(config.getKc());
+        dto.setCultura(config.getCultura());
+        dto.setFaseCrescimento(config.getFaseCrescimento());
         dto.setEspacamentoPlantasM(config.getEspacamentoPlantasM());
         dto.setEspacamentoLinhasM(config.getEspacamentoLinhasM());
         dto.setVazaoGotejadorLph(config.getVazaoGotejadorLph());
@@ -41,6 +43,8 @@ public class ConfigIrrigacaoService {
         ConfigIrrigacao config = device.getConfigIrrigacao();
 
         config.setKc(dto.getKc());
+        config.setCultura(dto.getCultura());
+        config.setFaseCrescimento(dto.getFaseCrescimento());
         config.setEspacamentoPlantasM(dto.getEspacamentoPlantasM());
         config.setEspacamentoLinhasM(dto.getEspacamentoLinhasM());
         config.setVazaoGotejadorLph(dto.getVazaoGotejadorLph());
@@ -52,6 +56,8 @@ public class ConfigIrrigacaoService {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("kc", dto.getKc());
+        payload.put("cultura", dto.getCultura());
+        payload.put("fase_crescimento", dto.getFaseCrescimento());
         payload.put("espacamento_plantas_m", dto.getEspacamentoPlantasM());
         payload.put("espacamento_linhas_m", dto.getEspacamentoLinhasM());
         payload.put("vazao_gotejador_lph", dto.getVazaoGotejadorLph());

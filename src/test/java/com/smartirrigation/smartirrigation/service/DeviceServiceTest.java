@@ -23,7 +23,9 @@ class DeviceServiceTest {
     private final DeviceRepository deviceRepository = mock(DeviceRepository.class);
     private final TelemetryRepository telemetryRepository = mock(TelemetryRepository.class);
     private final IrrigationHistoryRepository irrigationHistoryRepository = mock(IrrigationHistoryRepository.class);
-    private final DeviceService service = new DeviceService(deviceRepository, telemetryRepository, irrigationHistoryRepository);
+    private final CommandDispatchService commandDispatchService = mock(CommandDispatchService.class);
+    private final DeviceService service =
+            new DeviceService(deviceRepository, telemetryRepository, irrigationHistoryRepository, commandDispatchService);
 
     @Test
     void recordTelemetry_savesTemperatureHumiditySoilPercent() {
@@ -93,5 +95,19 @@ class DeviceServiceTest {
         when(deviceRepository.findById("missing-device")).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> service.getStatus("missing-device"));
+    }
+
+    @Test
+    void setLatitude_savesDeviceAndEnqueuesCommand() {
+        when(deviceRepository.findById("esp32-01")).thenReturn(Optional.of(new Device()));
+
+        service.setLatitude("esp32-01", -22.9);
+
+        ArgumentCaptor<Device> captor = ArgumentCaptor.forClass(Device.class);
+        verify(deviceRepository).save(eq("esp32-01"), captor.capture());
+        assertEquals(-22.9, captor.getValue().getLatitude());
+
+        verify(commandDispatchService).enqueue(eq("esp32-01"), argThat(command ->
+                command.type().equals("LATITUDE") && command.payload().get("latitude").equals(-22.9)));
     }
 }

@@ -15,7 +15,7 @@ import static org.mockito.Mockito.any;
 
 class DeviceKeyFilterTest {
 
-    private final FirebaseEnv env = new FirebaseEnv("proj", "./creds.json", "chave-secreta", "http://localhost:4200");
+    private final FirebaseEnv env = new FirebaseEnv("proj", "./creds.json", "chave-secreta", "http://localhost:4200", false);
 
     @Test
     void doFilter_passesThrough_whenKeyMatches() throws Exception {

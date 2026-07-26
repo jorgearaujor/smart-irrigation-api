@@ -53,7 +53,7 @@ class FirebaseAuthFilterTest {
             return null;
         }).when(chain).doFilter(any(), any());
 
-        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);
 
         Authentication auth = authDuringChain.get();
         assertNotNull(auth);
@@ -70,9 +70,30 @@ class FirebaseAuthFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices/esp32-01/status");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);
 
         assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+        verify(chain, never()).doFilter(any(), any());
+    }
+
+    @Test
+    void doFilter_returns403_whenUsuarioNotRegistered() throws Exception {
+        FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
+        UsuarioRepository usuarioRepository = mock(UsuarioRepository.class);
+        FirebaseToken token = mock(FirebaseToken.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(token);
+        when(token.getUid()).thenReturn("uid-789");
+        when(usuarioRepository.findById("uid-789")).thenReturn(Optional.empty());
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices/esp32-01/status");
+        request.addHeader("Authorization", "Bearer valid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);
+
+        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
         verify(chain, never()).doFilter(any(), any());
     }
 
@@ -85,7 +106,7 @@ class FirebaseAuthFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/webhooks/telemetry");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);
 
         verify(chain).doFilter(request, response);
         verifyNoInteractions(firebaseAuth);
@@ -104,7 +125,7 @@ class FirebaseAuthFilterTest {
                 new MockHttpServletRequest("POST", "/api/webhooks/../devices/esp32-01/config-irrigacao");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);
 
         assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
         verify(chain, never()).doFilter(any(), any());
@@ -120,13 +141,13 @@ class FirebaseAuthFilterTest {
 
         when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(token);
         when(token.getUid()).thenReturn("uid-456");
-        when(usuarioRepository.findById("uid-456")).thenReturn(Optional.empty());
+        when(usuarioRepository.findById("uid-456")).thenReturn(Optional.of(new Usuario()));
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices/esp32-01/status");
         request.addHeader("Authorization", "Bearer valid-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);
 
         // Asserted here, before the @AfterEach teardown runs, to prove the filter itself
         // clears the context rather than relying on test teardown to hide the fact that
@@ -146,7 +167,22 @@ class FirebaseAuthFilterTest {
         request.addHeader("Access-Control-Request-Method", "GET");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(request, response, chain);
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);
+
+        verify(chain).doFilter(request, response);
+        verifyNoInteractions(firebaseAuth);
+    }
+
+    @Test
+    void doFilter_skipsAuthEntirely_whenDashboardAuthDisabled() throws Exception {
+        FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
+        UsuarioRepository usuarioRepository = mock(UsuarioRepository.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices/esp32-01/status");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, false).doFilter(request, response, chain);
 
         verify(chain).doFilter(request, response);
         verifyNoInteractions(firebaseAuth);
@@ -160,13 +196,13 @@ class FirebaseAuthFilterTest {
         FilterChain apiDocsChain = mock(FilterChain.class);
         MockHttpServletRequest apiDocsRequest = new MockHttpServletRequest("GET", "/v3/api-docs");
         MockHttpServletResponse apiDocsResponse = new MockHttpServletResponse();
-        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(apiDocsRequest, apiDocsResponse, apiDocsChain);
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(apiDocsRequest, apiDocsResponse, apiDocsChain);
         verify(apiDocsChain).doFilter(apiDocsRequest, apiDocsResponse);
 
         FilterChain swaggerChain = mock(FilterChain.class);
         MockHttpServletRequest swaggerRequest = new MockHttpServletRequest("GET", "/swagger-ui/index.html");
         MockHttpServletResponse swaggerResponse = new MockHttpServletResponse();
-        new FirebaseAuthFilter(firebaseAuth, usuarioRepository).doFilter(swaggerRequest, swaggerResponse, swaggerChain);
+        new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(swaggerRequest, swaggerResponse, swaggerChain);
         verify(swaggerChain).doFilter(swaggerRequest, swaggerResponse);
 
         verifyNoInteractions(firebaseAuth);

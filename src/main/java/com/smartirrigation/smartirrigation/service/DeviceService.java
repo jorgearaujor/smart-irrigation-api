@@ -10,18 +10,27 @@ import com.smartirrigation.smartirrigation.repository.IrrigationHistoryRepositor
 import com.smartirrigation.smartirrigation.repository.TelemetryRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 public class DeviceService {
 
     private final DeviceRepository deviceRepository;
     private final TelemetryRepository telemetryRepository;
     private final IrrigationHistoryRepository irrigationHistoryRepository;
+    private final CommandDispatchService commandDispatchService;
 
     public DeviceService(DeviceRepository deviceRepository, TelemetryRepository telemetryRepository,
-                          IrrigationHistoryRepository irrigationHistoryRepository) {
+                          IrrigationHistoryRepository irrigationHistoryRepository,
+                          CommandDispatchService commandDispatchService) {
         this.deviceRepository = deviceRepository;
         this.telemetryRepository = telemetryRepository;
         this.irrigationHistoryRepository = irrigationHistoryRepository;
+        this.commandDispatchService = commandDispatchService;
     }
 
     public void recordTelemetry(String deviceId, TelemetryWebhookRequestDTO dto) {
@@ -93,5 +102,77 @@ public class DeviceService {
         response.setLatitude(device.getLatitude());
 
         return response;
+    }
+
+    public List<TelemetryResponseDTO> getTelemetryHistory(String deviceId, Instant from, Instant to, int limit) {
+        List<Telemetry> readings = telemetryRepository.findBetween(deviceId, from, to, limit);
+        return readings.stream()
+                .map(t -> new TelemetryResponseDTO(t.getTemperature(), t.getHumidity(), t.getSoilPercent(), t.getTimestamp()))
+                .collect(Collectors.toList());
+    }
+
+    public List<IrrigationHistoryResponseDTO> getIrrigationHistory(String deviceId, Instant from, Instant to) {
+        List<IrrigationHistoryRecord> records = irrigationHistoryRepository.findBetween(deviceId, from, to);
+        return records.stream().map(r -> {
+            IrrigationHistoryResponseDTO dto = new IrrigationHistoryResponseDTO();
+            dto.setUmidadeAtual(r.getUmidadeAtual());
+            dto.setTempo(r.getTempo());
+            dto.setVolumePorPlanta(r.getVolumePorPlanta());
+            dto.setVolumeTotal(r.getVolumeTotal());
+            dto.setData(r.getData());
+            dto.setHora(r.getHora());
+            dto.setModo(r.getModo());
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    public void startIrrigation(String deviceId, Double quantidadeAgua) {
+        Device device = findDevice(deviceId);
+        device.setQuantidadeAgua(quantidadeAgua);
+        device.setEmExecucao(true);
+        deviceRepository.save(deviceId, device);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("quantidade_agua", quantidadeAgua);
+        commandDispatchService.enqueue(deviceId, new CommandDispatchService.Command("START_IRRIGATION", payload));
+    }
+
+    public void stopIrrigation(String deviceId) {
+        Device device = findDevice(deviceId);
+        device.setEmExecucao(false);
+        deviceRepository.save(deviceId, device);
+
+        commandDispatchService.enqueue(deviceId, new CommandDispatchService.Command("STOP_IRRIGATION", Map.of()));
+    }
+
+    public void setModo(String deviceId, String modo) {
+        Device device = findDevice(deviceId);
+        device.setModo(modo);
+        deviceRepository.save(deviceId, device);
+
+        commandDispatchService.enqueue(deviceId, new CommandDispatchService.Command("MODE_CHANGE", Map.of("modo", modo)));
+    }
+
+    public void setAutorizado(String deviceId, Boolean autorizado) {
+        Device device = findDevice(deviceId);
+        device.setAutorizado(autorizado);
+        deviceRepository.save(deviceId, device);
+
+        commandDispatchService.enqueue(deviceId,
+                new CommandDispatchService.Command("AUTHORIZATION_CHANGE", Map.of("autorizado", autorizado)));
+    }
+
+    public void setLatitude(String deviceId, Double latitude) {
+        Device device = findDevice(deviceId);
+        device.setLatitude(latitude);
+        deviceRepository.save(deviceId, device);
+
+        commandDispatchService.enqueue(deviceId,
+                new CommandDispatchService.Command("LATITUDE", Map.of("latitude", latitude)));
+    }
+
+    private Device findDevice(String deviceId) {
+        return deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new NotFoundException("Device nao encontrado: " + deviceId));
     }
 }
