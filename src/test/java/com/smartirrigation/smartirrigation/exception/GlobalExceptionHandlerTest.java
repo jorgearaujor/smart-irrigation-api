@@ -48,4 +48,14 @@ class GlobalExceptionHandlerTest {
         assertEquals(403, response.getBody().getStatus());
         assertEquals("Acesso negado: permissao insuficiente para este recurso.", response.getBody().getMessage());
     }
+
+    @Test
+    void handleIllegalArgument_returns400() {
+        ResponseEntity<ErrorResponseDTO> response =
+                handler.handleIllegalArgument(new IllegalArgumentException("nome e obrigatorio"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("nome e obrigatorio", response.getBody().getMessage());
+    }
 }
