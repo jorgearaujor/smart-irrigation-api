@@ -32,6 +32,12 @@ public class CulturaService {
         if (dto.getKc1() == null || dto.getKc2() == null || dto.getKc3() == null || dto.getKc4() == null) {
             throw new IllegalArgumentException("Os coeficientes Kc das 4 fases sao obrigatorios.");
         }
+        if (dto.getKc1() <= 0 || dto.getKc1() > 3.0 ||
+            dto.getKc2() <= 0 || dto.getKc2() > 3.0 ||
+            dto.getKc3() <= 0 || dto.getKc3() > 3.0 ||
+            dto.getKc4() <= 0 || dto.getKc4() > 3.0) {
+            throw new IllegalArgumentException("Os coeficientes Kc devem estar na faixa (0, 3.0].");
+        }
 
         String nome = dto.getNome().trim();
         if (culturaRepository.findByName(nome).isPresent()) {

@@ -117,4 +117,28 @@ class CulturaServiceTest {
         verify(culturaRepository).save(eq("Alface"), captor.capture());
         assertEquals("0.5", captor.getValue().getKc1());
     }
+
+    @Test
+    void criar_throwsIllegalArgument_whenKcIsNegative() {
+        CulturaCreateRequestDTO dto = new CulturaCreateRequestDTO();
+        dto.setNome("Milho");
+        dto.setKc1(-0.5);
+        dto.setKc2(0.7);
+        dto.setKc3(1.0);
+        dto.setKc4(0.8);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+    }
+
+    @Test
+    void criar_throwsIllegalArgument_whenKcIsTooLarge() {
+        CulturaCreateRequestDTO dto = new CulturaCreateRequestDTO();
+        dto.setNome("Soja");
+        dto.setKc1(0.5);
+        dto.setKc2(5.0);
+        dto.setKc3(1.0);
+        dto.setKc4(0.8);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+    }
 }
