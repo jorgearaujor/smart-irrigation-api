@@ -1,6 +1,7 @@
 package com.smartirrigation.smartirrigation.service;
 
 import com.smartirrigation.smartirrigation.dto.*;
+import com.smartirrigation.smartirrigation.exception.ConflictException;
 import com.smartirrigation.smartirrigation.exception.NotFoundException;
 import com.smartirrigation.smartirrigation.model.Device;
 import com.smartirrigation.smartirrigation.model.IrrigationHistoryRecord;
@@ -62,6 +63,7 @@ public class DeviceService {
         record.setVolumeTotal(dto.getVolumeTotal());
         record.setData(dto.getData());
         record.setHora(dto.getHora());
+        record.setModo(dto.getModo());
         irrigationHistoryRepository.add(deviceId, record);
     }
 
@@ -147,6 +149,9 @@ public class DeviceService {
 
     public void setModo(String deviceId, String modo) {
         Device device = findDevice(deviceId);
+        if (Boolean.TRUE.equals(device.getEmExecucao())) {
+            throw new ConflictException("Nao e possivel trocar o modo enquanto o dispositivo esta irrigando.");
+        }
         device.setModo(modo);
         deviceRepository.save(deviceId, device);
 

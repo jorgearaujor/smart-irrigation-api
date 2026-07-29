@@ -8,6 +8,7 @@ public class HistoryWebhookRequestDTO {
     private Double volumeTotal;
     private String data;
     private String hora;
+    private String modo;
 
     public String getDeviceId() { return deviceId; }
     public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
@@ -23,4 +24,6 @@ public class HistoryWebhookRequestDTO {
     public void setData(String data) { this.data = data; }
     public String getHora() { return hora; }
     public void setHora(String hora) { this.hora = hora; }
+    public String getModo() { return modo; }
+    public void setModo(String modo) { this.modo = modo; }
 }

@@ -1,10 +1,13 @@
 package com.smartirrigation.smartirrigation.service;
 
 import com.smartirrigation.smartirrigation.dto.DeviceStatusResponseDTO;
+import com.smartirrigation.smartirrigation.dto.HistoryWebhookRequestDTO;
 import com.smartirrigation.smartirrigation.dto.StatusWebhookRequestDTO;
 import com.smartirrigation.smartirrigation.dto.TelemetryWebhookRequestDTO;
+import com.smartirrigation.smartirrigation.exception.ConflictException;
 import com.smartirrigation.smartirrigation.exception.NotFoundException;
 import com.smartirrigation.smartirrigation.model.Device;
+import com.smartirrigation.smartirrigation.model.IrrigationHistoryRecord;
 import com.smartirrigation.smartirrigation.model.Telemetry;
 import com.smartirrigation.smartirrigation.repository.DeviceRepository;
 import com.smartirrigation.smartirrigation.repository.IrrigationHistoryRepository;
@@ -42,6 +45,26 @@ class DeviceServiceTest {
         verify(telemetryRepository).add(eq("esp32-01"), captor.capture());
         assertEquals(24.5, captor.getValue().getTemperature());
         assertEquals(45.0, captor.getValue().getSoilPercent());
+    }
+
+    @Test
+    void recordHistory_savesModoAlongWithOtherFields() {
+        HistoryWebhookRequestDTO dto = new HistoryWebhookRequestDTO();
+        dto.setDeviceId("esp32-01");
+        dto.setUmidadeAtual(42.0);
+        dto.setTempo("2min 30s");
+        dto.setVolumePorPlanta(1.5);
+        dto.setVolumeTotal(45.0);
+        dto.setData("28/07/2026");
+        dto.setHora("19:00:00");
+        dto.setModo("automatico");
+
+        service.recordHistory("esp32-01", dto);
+
+        ArgumentCaptor<IrrigationHistoryRecord> captor = ArgumentCaptor.forClass(IrrigationHistoryRecord.class);
+        verify(irrigationHistoryRepository).add(eq("esp32-01"), captor.capture());
+        assertEquals("automatico", captor.getValue().getModo());
+        assertEquals(45.0, captor.getValue().getVolumeTotal());
     }
 
     @Test
@@ -88,6 +111,33 @@ class DeviceServiceTest {
         assertEquals(32.0, status.getTempMax());
         assertEquals(true, status.getEmExecucao());
         assertEquals(-23.55, status.getLatitude());
+    }
+
+    @Test
+    void setModo_updatesDeviceAndEnqueuesCommand_whenNotIrrigating() {
+        Device device = new Device();
+        device.setEmExecucao(false);
+        when(deviceRepository.findById("esp32-01")).thenReturn(Optional.of(device));
+
+        service.setModo("esp32-01", "automatico");
+
+        ArgumentCaptor<Device> captor = ArgumentCaptor.forClass(Device.class);
+        verify(deviceRepository).save(eq("esp32-01"), captor.capture());
+        assertEquals("automatico", captor.getValue().getModo());
+        verify(commandDispatchService).enqueue(eq("esp32-01"), argThat(command ->
+                command.type().equals("MODE_CHANGE") && command.payload().get("modo").equals("automatico")));
+    }
+
+    @Test
+    void setModo_throwsConflict_whenDeviceIsIrrigating() {
+        Device device = new Device();
+        device.setEmExecucao(true);
+        when(deviceRepository.findById("esp32-01")).thenReturn(Optional.of(device));
+
+        assertThrows(ConflictException.class, () -> service.setModo("esp32-01", "automatico"));
+
+        verify(deviceRepository, never()).save(any(), any());
+        verify(commandDispatchService, never()).enqueue(any(), any());
     }
 
     @Test
