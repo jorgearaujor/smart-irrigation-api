@@ -38,3 +38,6 @@ smart-irrigation-ifmaker-firebase.json
 
 ### Worktrees ###
 .worktrees/
+
+### Ferramentas locais de teste (nao fazem parte do app) ###
+/tools/
