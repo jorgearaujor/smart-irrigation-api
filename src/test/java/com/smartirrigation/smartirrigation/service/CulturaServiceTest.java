@@ -1,15 +1,22 @@
 package com.smartirrigation.smartirrigation.service;
 
+import com.smartirrigation.smartirrigation.dto.CulturaCreateRequestDTO;
 import com.smartirrigation.smartirrigation.dto.CulturaDTO;
+import com.smartirrigation.smartirrigation.exception.ConflictException;
 import com.smartirrigation.smartirrigation.model.CoeficienteCultura;
 import com.smartirrigation.smartirrigation.repository.CulturaRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CulturaServiceTest {
@@ -49,5 +56,65 @@ class CulturaServiceTest {
 
         assertNull(result.get(0).getKc1());
         assertNull(result.get(0).getKc2());
+    }
+
+    @Test
+    void criar_throwsIllegalArgument_whenNomeIsBlank() {
+        CulturaCreateRequestDTO dto = new CulturaCreateRequestDTO();
+        dto.setNome("  ");
+        dto.setKc1(0.5);
+        dto.setKc2(0.7);
+        dto.setKc3(1.0);
+        dto.setKc4(0.8);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+    }
+
+    @Test
+    void criar_throwsIllegalArgument_whenKcIsMissing() {
+        CulturaCreateRequestDTO dto = new CulturaCreateRequestDTO();
+        dto.setNome("Alface");
+        dto.setKc1(0.5);
+        dto.setKc2(null);
+        dto.setKc3(1.0);
+        dto.setKc4(0.8);
+
+        assertThrows(IllegalArgumentException.class, () -> service.criar(dto));
+    }
+
+    @Test
+    void criar_throwsConflict_whenCulturaJaExiste() {
+        CulturaCreateRequestDTO dto = new CulturaCreateRequestDTO();
+        dto.setNome("Tomate");
+        dto.setKc1(0.6);
+        dto.setKc2(0.8);
+        dto.setKc3(1.15);
+        dto.setKc4(0.9);
+        when(culturaRepository.findByName("Tomate")).thenReturn(Optional.of(new CoeficienteCultura()));
+
+        assertThrows(ConflictException.class, () -> service.criar(dto));
+    }
+
+    @Test
+    void criar_savesAndReturnsDto_whenValido() {
+        CulturaCreateRequestDTO dto = new CulturaCreateRequestDTO();
+        dto.setNome("Alface");
+        dto.setKc1(0.5);
+        dto.setKc2(0.7);
+        dto.setKc3(1.0);
+        dto.setKc4(0.8);
+        when(culturaRepository.findByName("Alface")).thenReturn(Optional.empty());
+
+        CulturaDTO result = service.criar(dto);
+
+        assertEquals("Alface", result.getNome());
+        assertEquals(0.5, result.getKc1());
+        assertEquals(0.7, result.getKc2());
+        assertEquals(1.0, result.getKc3());
+        assertEquals(0.8, result.getKc4());
+
+        ArgumentCaptor<CoeficienteCultura> captor = ArgumentCaptor.forClass(CoeficienteCultura.class);
+        verify(culturaRepository).save(eq("Alface"), captor.capture());
+        assertEquals("0.5", captor.getValue().getKc1());
     }
 }

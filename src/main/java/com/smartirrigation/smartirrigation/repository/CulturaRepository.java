@@ -44,4 +44,14 @@ public class CulturaRepository {
             throw new RuntimeException("Falha ao listar culturas", e);
         }
     }
+
+    public void save(String nome, CoeficienteCultura cultura) {
+        try {
+            firestore.collection(COLLECTION).document(nome).set(cultura).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Falha ao salvar cultura " + nome + " no Firestore", e);
+        }
+    }
 }
+
