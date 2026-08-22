@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.smartirrigation</groupId>
     <artifactId>smart-irrigation</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>smart-irrigation</name>
     <description>smart-irrigation</description>
     <url/>
