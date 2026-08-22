@@ -7,6 +7,7 @@ import com.smartirrigation.smartirrigation.dto.ModeUpdateRequestDTO;
 import com.smartirrigation.smartirrigation.service.DeviceService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/devices/{deviceId}")
-@Tag(name = "Device Commands (Web)", description = "Comandos de irrigacao disparados pelo dashboard web")
+@Tag(name = "Device Commands (Web)", description = "Comandos de irrigacao disparados pelo dashboard web (somente Administrador)")
 public class DeviceCommandController {
 
     private final DeviceService deviceService;
@@ -26,30 +27,35 @@ public class DeviceCommandController {
     }
 
     @PostMapping("/irrigation/start")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> startIrrigation(@PathVariable String deviceId, @RequestBody IrrigationStartRequestDTO dto) {
         deviceService.startIrrigation(deviceId, dto.getQuantidadeAgua());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/irrigation/stop")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> stopIrrigation(@PathVariable String deviceId) {
         deviceService.stopIrrigation(deviceId);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/mode")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateMode(@PathVariable String deviceId, @RequestBody ModeUpdateRequestDTO dto) {
         deviceService.setModo(deviceId, dto.getModo());
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/authorization")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateAuthorization(@PathVariable String deviceId, @RequestBody AuthorizationUpdateRequestDTO dto) {
         deviceService.setAutorizado(deviceId, dto.getAutorizado());
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/latitude")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateLatitude(@PathVariable String deviceId, @RequestBody LatitudeUpdateRequestDTO dto) {
         deviceService.setLatitude(deviceId, dto.getLatitude());
         return ResponseEntity.ok().build();

@@ -4,6 +4,7 @@ import com.smartirrigation.smartirrigation.dto.ConfigIrrigacaoDTO;
 import com.smartirrigation.smartirrigation.service.ConfigIrrigacaoService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +24,7 @@ public class ConfigIrrigacaoController {
     }
 
     @PutMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateConfig(@PathVariable String deviceId, @RequestBody ConfigIrrigacaoDTO dto) {
         configIrrigacaoService.updateConfig(deviceId, dto);
         return ResponseEntity.noContent().build();

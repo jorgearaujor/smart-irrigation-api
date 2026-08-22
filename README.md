@@ -47,7 +47,7 @@ O backend serve **dois tipos de cliente diferentes**, cada um com seu próprio m
 
 Login é feito com Firebase Authentication (e-mail/senha). Mas **um token Firebase válido sozinho não é suficiente**: depois de validar o token, o backend busca o documento `usuarios/{uid}` no Firestore — se não existir, a requisição é rejeitada com `403`, mesmo com login válido. Isso funciona como uma allowlist: só quem tem um documento cadastrado em `usuarios` consegue usar o dashboard. O campo `tipo` desse documento (`"Administrador"` ou qualquer outro valor) define o papel do usuário — só `"Administrador"` recebe `ROLE_ADMIN`.
 
-**Esse mecanismo está implementado, mas atualmente desligado** via `DASHBOARD_AUTH_ENABLED=false` — todas as rotas do dashboard ficam abertas sem autenticação enquanto essa flag estiver `false`. Para reativar, basta colocar `DASHBOARD_AUTH_ENABLED=true` no `.env` e reiniciar. Uma exceção: `POST /api/usuarios` tem `@PreAuthorize("hasRole('ADMIN')")` fixo no código — com a flag desligada (nenhuma autenticação é populada), esse endpoint específico fica bloqueado mesmo sem exigir token nas outras rotas. Reative a flag para poder cadastrar novos usuários pelo endpoint.
+**Esse mecanismo está implementado, mas atualmente desligado** via `DASHBOARD_AUTH_ENABLED=false` — todas as rotas do dashboard ficam abertas sem autenticação enquanto essa flag estiver `false`. Para reativar, basta colocar `DASHBOARD_AUTH_ENABLED=true` no `.env` e reiniciar. Uma exceção: `POST /api/usuarios`, `POST /api/culturas` e todos os endpoints de escrita de `/api/devices/{id}/**` (irrigação manual, modo, autorização, latitude, config-irrigação) têm `@PreAuthorize("hasRole('ADMIN')")` fixo no código — com a flag desligada (nenhuma autenticação é populada), esses endpoints ficam bloqueados mesmo sem exigir token nas outras rotas. Reative a flag para poder usá-los.
 
 ### Autenticação do dispositivo (chave fixa)
 
@@ -75,12 +75,12 @@ O ESP32 não recebe pushes diretos. Quando o dashboard chama uma ação (iniciar
 |---|---|---|
 | GET | `/api/devices/{id}/status` | Snapshot atual do dispositivo |
 | GET | `/api/devices/{id}/config-irrigacao` | Parâmetros agronômicos atuais |
-| PUT | `/api/devices/{id}/config-irrigacao` | Atualiza parâmetros agronômicos (kc, cultura, fase, espaçamento, vazão, etc.) |
-| POST | `/api/devices/{id}/irrigation/start` | Inicia irrigação manual (`{ quantidadeAgua }`) |
-| POST | `/api/devices/{id}/irrigation/stop` | Para a irrigação manual |
-| PUT | `/api/devices/{id}/mode` | Troca modo manual/automático (`{ modo }`) |
-| PUT | `/api/devices/{id}/authorization` | Autoriza/desautoriza a irrigação automática (`{ autorizado }`) |
-| PUT | `/api/devices/{id}/latitude` | Atualiza a latitude do sistema (`{ latitude }`) |
+| PUT | `/api/devices/{id}/config-irrigacao` | Atualiza parâmetros agronômicos (kc, cultura, fase, espaçamento, vazão, etc.) — só `ROLE_ADMIN` |
+| POST | `/api/devices/{id}/irrigation/start` | Inicia irrigação manual (`{ quantidadeAgua }`) — só `ROLE_ADMIN` |
+| POST | `/api/devices/{id}/irrigation/stop` | Para a irrigação manual — só `ROLE_ADMIN` |
+| PUT | `/api/devices/{id}/mode` | Troca modo manual/automático (`{ modo }`) — só `ROLE_ADMIN` |
+| PUT | `/api/devices/{id}/authorization` | Autoriza/desautoriza a irrigação automática (`{ autorizado }`) — só `ROLE_ADMIN` |
+| PUT | `/api/devices/{id}/latitude` | Atualiza a latitude do sistema (`{ latitude }`) — só `ROLE_ADMIN` |
 | GET | `/api/devices/{id}/telemetry` | Histórico de telemetria (`from`, `to`, `limit`) |
 | GET | `/api/devices/{id}/irrigation-history` | Histórico de irrigações (`from`, `to`) |
 | GET | `/api/culturas` | Catálogo de culturas cadastradas e seus coeficientes por fase |
