@@ -1,7 +1,5 @@
 # SmartIrrigation Backend Foundation Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Stand up the Spring Boot backend foundation — dependencies, Firebase/Firestore config read from `.env`, security (device API key + Firebase Auth roles), exception handling, and the full device-facing contract (webhooks + config + command long-poll) plus one complete web-facing vertical slice (status + config de irrigação), all following the MovelControl layered architecture.
 
 **Architecture:** Layered `config/security/controller/service/repository/model/dto/exception` packages under `com.smartirrigation.smartirrigation`, mirroring MovelControl's `Controller → Service → Repository → Model` flow, with Firestore (Firebase Admin SDK) replacing JPA. Two independent auth paths: `DeviceKeyFilter` (ESP32, header `X-Device-Key`) and `FirebaseAuthFilter` (Angular, Firebase ID Token + role from Firestore).

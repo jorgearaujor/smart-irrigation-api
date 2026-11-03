@@ -1,7 +1,5 @@
 # Cadastro de Cultura Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Adicionar um endpoint `POST /api/culturas` (admin-only) e uma tela dedicada no front (`/culturas/nova`) para cadastrar uma cultura nova no catálogo (nome + Kc das 4 fases de crescimento).
 
 **Architecture:** Backend Spring Boot em camadas (Controller → Service → Repository → Firestore), mesmo padrão já usado por `POST /api/usuarios`. Front Angular standalone component com `FormsModule`/`ngModel` e signals, mesmo padrão de `CadastroComponent`.
