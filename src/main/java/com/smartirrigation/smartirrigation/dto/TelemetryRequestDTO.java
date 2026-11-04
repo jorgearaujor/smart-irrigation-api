@@ -1,6 +1,6 @@
 package com.smartirrigation.smartirrigation.dto;
 
-public class TelemetryWebhookRequestDTO {
+public class TelemetryRequestDTO {
     private String deviceId;
     private Double temperature;
     private Double humidity;

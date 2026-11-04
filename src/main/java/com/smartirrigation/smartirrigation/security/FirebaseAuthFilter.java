@@ -51,7 +51,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         }
 
         String cleanedUri = StringUtils.cleanPath(request.getRequestURI());
-        if (DevicePaths.matches(cleanedUri)) {
+        if (DevicePaths.matches(request.getMethod(), cleanedUri)) {
             filterChain.doFilter(request, response);
             return;
         }

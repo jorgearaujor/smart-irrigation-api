@@ -20,7 +20,7 @@ class DeviceKeyFilterTest {
     @Test
     void doFilter_passesThrough_whenKeyMatches() throws Exception {
         FilterChain chain = mock(FilterChain.class);
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/webhooks/telemetry");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/devices/esp32-01/telemetry");
         request.addHeader("X-Device-Key", "chave-secreta");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -32,7 +32,7 @@ class DeviceKeyFilterTest {
     @Test
     void doFilter_returns401_whenKeyMissingOrWrong() throws Exception {
         FilterChain chain = mock(FilterChain.class);
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/webhooks/telemetry");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/devices/esp32-01/telemetry");
         request.addHeader("X-Device-Key", "chave-errada");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -54,16 +54,29 @@ class DeviceKeyFilterTest {
     }
 
     @Test
+    void doFilter_ignoresDashboardGetOnSharedPath() throws Exception {
+        FilterChain chain = mock(FilterChain.class);
+        // Same path as the device POST, but GET belongs to the dashboard (Firebase auth),
+        // so the device key must not be required here.
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices/esp32-01/telemetry");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new DeviceKeyFilter(env).doFilter(request, response, chain);
+
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
     void doFilter_doesNotTreatPathTraversalUriAsDevicePath() throws Exception {
         FilterChain chain = mock(FilterChain.class);
 
         // Raw URI contains a literal ".." segment that, without normalization, tokenizes
-        // under AntPathMatcher such that "/api/webhooks/**" would opaquely swallow it -
+        // under AntPathMatcher such that "/api/devices/*/telemetry" would opaquely swallow it -
         // even though the normalized path is not actually a device-only path. Since this
         // isn't a true device path, DeviceKeyFilter must do nothing and let the rest of
         // the chain (FirebaseAuthFilter) handle it, rather than enforcing X-Device-Key.
         MockHttpServletRequest request =
-                new MockHttpServletRequest("POST", "/api/webhooks/../devices/esp32-01/config-irrigacao");
+                new MockHttpServletRequest("POST", "/api/devices/esp32-01/telemetry/../config-irrigacao");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         new DeviceKeyFilter(env).doFilter(request, response, chain);
