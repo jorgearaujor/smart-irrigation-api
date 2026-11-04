@@ -1,9 +1,9 @@
 package com.smartirrigation.smartirrigation.service;
 
 import com.smartirrigation.smartirrigation.dto.DeviceStatusResponseDTO;
-import com.smartirrigation.smartirrigation.dto.HistoryWebhookRequestDTO;
-import com.smartirrigation.smartirrigation.dto.StatusWebhookRequestDTO;
-import com.smartirrigation.smartirrigation.dto.TelemetryWebhookRequestDTO;
+import com.smartirrigation.smartirrigation.dto.HistoryRequestDTO;
+import com.smartirrigation.smartirrigation.dto.StatusRequestDTO;
+import com.smartirrigation.smartirrigation.dto.TelemetryRequestDTO;
 import com.smartirrigation.smartirrigation.exception.ConflictException;
 import com.smartirrigation.smartirrigation.exception.NotFoundException;
 import com.smartirrigation.smartirrigation.model.Device;
@@ -32,7 +32,7 @@ class DeviceServiceTest {
 
     @Test
     void recordTelemetry_savesTemperatureHumiditySoilPercent() {
-        TelemetryWebhookRequestDTO dto = new TelemetryWebhookRequestDTO();
+        TelemetryRequestDTO dto = new TelemetryRequestDTO();
         dto.setDeviceId("esp32-01");
         dto.setTemperature(24.5);
         dto.setHumidity(60.0);
@@ -49,7 +49,7 @@ class DeviceServiceTest {
 
     @Test
     void recordHistory_savesModoAlongWithOtherFields() {
-        HistoryWebhookRequestDTO dto = new HistoryWebhookRequestDTO();
+        HistoryRequestDTO dto = new HistoryRequestDTO();
         dto.setDeviceId("esp32-01");
         dto.setUmidadeAtual(42.0);
         dto.setTempo("2min 30s");
@@ -71,7 +71,7 @@ class DeviceServiceTest {
     void updateStatus_upsertsDeviceFields() {
         when(deviceRepository.findById("esp32-01")).thenReturn(Optional.of(new Device()));
 
-        StatusWebhookRequestDTO dto = new StatusWebhookRequestDTO();
+        StatusRequestDTO dto = new StatusRequestDTO();
         dto.setDeviceId("esp32-01");
         dto.setModo("automatico");
         dto.setAutorizado(true);

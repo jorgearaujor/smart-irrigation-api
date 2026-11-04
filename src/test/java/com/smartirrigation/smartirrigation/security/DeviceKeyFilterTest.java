@@ -20,7 +20,7 @@ class DeviceKeyFilterTest {
     @Test
     void doFilter_passesThrough_whenKeyMatches() throws Exception {
         FilterChain chain = mock(FilterChain.class);
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/webhooks/telemetry");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/ingest/telemetry");
         request.addHeader("X-Device-Key", "chave-secreta");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -32,7 +32,7 @@ class DeviceKeyFilterTest {
     @Test
     void doFilter_returns401_whenKeyMissingOrWrong() throws Exception {
         FilterChain chain = mock(FilterChain.class);
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/webhooks/telemetry");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/ingest/telemetry");
         request.addHeader("X-Device-Key", "chave-errada");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -58,12 +58,12 @@ class DeviceKeyFilterTest {
         FilterChain chain = mock(FilterChain.class);
 
         // Raw URI contains a literal ".." segment that, without normalization, tokenizes
-        // under AntPathMatcher such that "/api/webhooks/**" would opaquely swallow it -
+        // under AntPathMatcher such that "/api/ingest/**" would opaquely swallow it -
         // even though the normalized path is not actually a device-only path. Since this
         // isn't a true device path, DeviceKeyFilter must do nothing and let the rest of
         // the chain (FirebaseAuthFilter) handle it, rather than enforcing X-Device-Key.
         MockHttpServletRequest request =
-                new MockHttpServletRequest("POST", "/api/webhooks/../devices/esp32-01/config-irrigacao");
+                new MockHttpServletRequest("POST", "/api/ingest/../devices/esp32-01/config-irrigacao");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         new DeviceKeyFilter(env).doFilter(request, response, chain);

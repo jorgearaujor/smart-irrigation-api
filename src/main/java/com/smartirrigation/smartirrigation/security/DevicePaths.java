@@ -7,7 +7,7 @@ import java.util.List;
 public final class DevicePaths {
 
     public static final List<String> PATTERNS = List.of(
-            "/api/webhooks/**",
+            "/api/ingest/**",
             "/api/devices/*/config",
             "/api/devices/*/commands/poll"
     );

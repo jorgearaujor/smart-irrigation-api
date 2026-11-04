@@ -1,6 +1,6 @@
 package com.smartirrigation.smartirrigation.dto;
 
-public class HistoryWebhookRequestDTO {
+public class HistoryRequestDTO {
     private String deviceId;
     private Double umidadeAtual;
     private String tempo;
