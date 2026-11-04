@@ -9,31 +9,31 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/ingest")
-@Tag(name = "Device Ingest", description = "Endpoints de ingestão de dados que o firmware do ESP32 chama via POST")
-public class DeviceIngestController {
+@RequestMapping("/api/devices/{deviceId}")
+@Tag(name = "Device Data", description = "Endpoints que o firmware do ESP32 chama via POST para enviar dados")
+public class DeviceDataController {
 
     private final DeviceService deviceService;
 
-    public DeviceIngestController(DeviceService deviceService) {
+    public DeviceDataController(DeviceService deviceService) {
         this.deviceService = deviceService;
     }
 
     @PostMapping("/telemetry")
-    public ResponseEntity<Void> telemetry(@RequestBody TelemetryRequestDTO dto) {
-        deviceService.recordTelemetry(dto.getDeviceId(), dto);
+    public ResponseEntity<Void> telemetry(@PathVariable String deviceId, @RequestBody TelemetryRequestDTO dto) {
+        deviceService.recordTelemetry(deviceId, dto);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/status")
-    public ResponseEntity<Void> status(@RequestBody StatusRequestDTO dto) {
-        deviceService.updateStatus(dto.getDeviceId(), dto);
+    public ResponseEntity<Void> status(@PathVariable String deviceId, @RequestBody StatusRequestDTO dto) {
+        deviceService.updateStatus(deviceId, dto);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/history")
-    public ResponseEntity<Void> history(@RequestBody HistoryRequestDTO dto) {
-        deviceService.recordHistory(dto.getDeviceId(), dto);
+    @PostMapping("/irrigation-history")
+    public ResponseEntity<Void> history(@PathVariable String deviceId, @RequestBody HistoryRequestDTO dto) {
+        deviceService.recordHistory(deviceId, dto);
         return ResponseEntity.ok().build();
     }
 }
