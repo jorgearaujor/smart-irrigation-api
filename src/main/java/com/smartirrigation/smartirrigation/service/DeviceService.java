@@ -34,7 +34,7 @@ public class DeviceService {
         this.commandDispatchService = commandDispatchService;
     }
 
-    public void recordTelemetry(String deviceId, TelemetryWebhookRequestDTO dto) {
+    public void recordTelemetry(String deviceId, TelemetryRequestDTO dto) {
         Telemetry telemetry = new Telemetry();
         telemetry.setTemperature(dto.getTemperature());
         telemetry.setHumidity(dto.getHumidity());
@@ -43,7 +43,7 @@ public class DeviceService {
         telemetryRepository.add(deviceId, telemetry);
     }
 
-    public void updateStatus(String deviceId, StatusWebhookRequestDTO dto) {
+    public void updateStatus(String deviceId, StatusRequestDTO dto) {
         Device device = deviceRepository.findById(deviceId).orElseGet(Device::new);
         device.setModo(dto.getModo());
         device.setAutorizado(dto.getAutorizado());
@@ -55,7 +55,7 @@ public class DeviceService {
         deviceRepository.save(deviceId, device);
     }
 
-    public void recordHistory(String deviceId, HistoryWebhookRequestDTO dto) {
+    public void recordHistory(String deviceId, HistoryRequestDTO dto) {
         IrrigationHistoryRecord record = new IrrigationHistoryRecord();
         record.setUmidadeAtual(dto.getUmidadeAtual());
         record.setTempo(dto.getTempo());

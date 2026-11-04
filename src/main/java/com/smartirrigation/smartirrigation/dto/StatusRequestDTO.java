@@ -1,6 +1,6 @@
 package com.smartirrigation.smartirrigation.dto;
 
-public class StatusWebhookRequestDTO {
+public class StatusRequestDTO {
     private String deviceId;
     private String modo;
     private Boolean autorizado;
