@@ -25,8 +25,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(DevicePaths.PATTERNS.toArray(new String[0])).permitAll()
-                            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    DevicePaths.ROUTES.forEach(route ->
+                            auth.requestMatchers(route.method(), route.pattern()).permitAll());
+                    auth.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                             // Must stay public: our filters call response.sendError(...), which triggers an
                             // internal forward to /error that re-enters this same filter chain. Without this,
                             // that forwarded request gets denied by AuthorizationFilter (no principal on an

@@ -98,12 +98,12 @@ class FirebaseAuthFilterTest {
     }
 
     @Test
-    void doFilter_skipsDeviceIngestPaths() throws Exception {
+    void doFilter_skipsDeviceDataPaths() throws Exception {
         FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
         UsuarioRepository usuarioRepository = mock(UsuarioRepository.class);
         FilterChain chain = mock(FilterChain.class);
 
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/ingest/telemetry");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/devices/esp32-01/telemetry");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);
@@ -119,10 +119,10 @@ class FirebaseAuthFilterTest {
         FilterChain chain = mock(FilterChain.class);
 
         // Raw URI contains a literal ".." segment that, without normalization, tokenizes
-        // under AntPathMatcher such that "/api/ingest/**" would opaquely swallow it -
+        // under AntPathMatcher such that "/api/devices/*/telemetry" would opaquely swallow it -
         // even though the normalized path is not actually a device-only path.
         MockHttpServletRequest request =
-                new MockHttpServletRequest("POST", "/api/ingest/../devices/esp32-01/config-irrigacao");
+                new MockHttpServletRequest("POST", "/api/devices/esp32-01/telemetry/../config-irrigacao");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         new FirebaseAuthFilter(firebaseAuth, usuarioRepository, true).doFilter(request, response, chain);

@@ -38,7 +38,7 @@ O backend serve **dois tipos de cliente diferentes**, cada um com seu próprio m
 
 | | Dashboard web/mobile | Dispositivo ESP32 |
 |---|---|---|
-| Rotas | `/api/devices/{id}/...` (exceto `/config` e `/commands/poll`), `/api/culturas`, `/api/usuarios` | `/api/ingest/**`, `/api/devices/{id}/config`, `/api/devices/{id}/commands/poll` |
+| Rotas | `/api/devices/{id}/...` (exceto as do dispositivo, ao lado), `/api/culturas`, `/api/usuarios` | `POST /api/devices/{id}/telemetry`, `POST /api/devices/{id}/status`, `POST /api/devices/{id}/irrigation-history`, `GET /api/devices/{id}/config`, `GET /api/devices/{id}/commands/poll` |
 | Autenticação | Firebase ID Token (`Authorization: Bearer ...`) | Header fixo `X-Device-Key` |
 | Filtro responsável | `FirebaseAuthFilter` | `DeviceKeyFilter` |
 | Estado atual | **Desativado** (veja abaixo) | Sempre ativo |
@@ -51,7 +51,7 @@ Login é feito com Firebase Authentication (e-mail/senha). Mas **um token Fireba
 
 ### Autenticação do dispositivo (chave fixa)
 
-O ESP32 envia o header `X-Device-Key` em toda chamada aos endpoints de ingestão (`/api/ingest/**`), config e poll. O valor precisa bater exatamente com `DEVICE_API_KEY` do `.env`. Esse mecanismo **não depende de nenhuma flag** — está sempre ativo.
+O ESP32 envia o header `X-Device-Key` em toda chamada às rotas do dispositivo listadas acima. Algumas compartilham o caminho com rotas do painel (por exemplo `GET` e `POST /api/devices/{id}/telemetry`) e se diferenciam pelo método HTTP. O valor precisa bater exatamente com `DEVICE_API_KEY` do `.env`. Esse mecanismo **não depende de nenhuma flag** — está sempre ativo.
 
 ### Como o dispositivo recebe comandos
 
@@ -93,9 +93,9 @@ O ESP32 não recebe pushes diretos. Quando o dashboard chama uma ação (iniciar
 |---|---|---|
 | GET | `/api/devices/{id}/config` | Configuração completa que o firmware precisa (status + parâmetros agronômicos) |
 | GET | `/api/devices/{id}/commands/poll` | Long-poll (30s) aguardando o próximo comando enfileirado |
-| POST | `/api/ingest/telemetry` | Dispositivo envia uma leitura de sensor |
-| POST | `/api/ingest/status` | Dispositivo reporta seu status atual |
-| POST | `/api/ingest/history` | Dispositivo reporta um evento de irrigação concluído |
+| POST | `/api/devices/{id}/telemetry` | Dispositivo envia uma leitura de sensor |
+| POST | `/api/devices/{id}/status` | Dispositivo reporta seu status atual |
+| POST | `/api/devices/{id}/irrigation-history` | Dispositivo reporta um evento de irrigação concluído |
 
 ### Públicas (sempre, sem autenticação)
 
